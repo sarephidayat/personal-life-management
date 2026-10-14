@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -43,6 +44,7 @@ import com.example.personallife.ui.finance.TransactionFormDialog
 import com.example.personallife.ui.planner.PlannerScreen
 import com.example.personallife.ui.settings.PinLockScreen
 import com.example.personallife.ui.settings.SettingsDialog
+import com.example.personallife.ui.splash.StartupLoadingScreen
 import com.example.personallife.ui.theme.LightText
 import com.example.personallife.ui.theme.NeoYellow
 import com.example.personallife.ui.theme.PersonalLifeTheme
@@ -60,14 +62,18 @@ class MainActivity : ComponentActivity() {
             val state by viewModel.uiState.collectAsState()
 
             PersonalLifeTheme(themeMode = state.themeMode) {
-                if (state.isAppLocked) {
-                    PinLockScreen(
-                        onUnlock = { pin, callback ->
-                            viewModel.unlockApp(pin, callback)
-                        }
-                    )
-                } else {
-                    MainAppContent(viewModel = viewModel)
+                Crossfade(targetState = state.isInitializing, label = "startup_transition") { initializing ->
+                    if (initializing) {
+                        StartupLoadingScreen()
+                    } else if (state.isAppLocked) {
+                        PinLockScreen(
+                            onUnlock = { pin, callback ->
+                                viewModel.unlockApp(pin, callback)
+                            }
+                        )
+                    } else {
+                        MainAppContent(viewModel = viewModel)
+                    }
                 }
             }
         }

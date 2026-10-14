@@ -44,7 +44,8 @@ data class MainUiState(
     val calendarConnectionState: com.example.personallife.data.google.CalendarConnectionState = com.example.personallife.data.google.CalendarConnectionState.NotConnected,
     val currentNavTab: Int = 0, // 0: Home, 1: Finance, 2: Planner
     val financeSubTab: Int = 0, // 0: Transaksi, 1: Anggaran, 2: Tabungan, 3: Laporan, 4: Kategori
-    val plannerSubTab: Int = 0  // 0: Kalender, 1: Tugas, 2: Catatan, 3: Sync
+    val plannerSubTab: Int = 0, // 0: Kalender, 1: Tugas, 2: Catatan, 3: Sync
+    val isInitializing: Boolean = true
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -57,8 +58,54 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
     init {
-        loadSettingsAndSecurity()
-        refreshAll()
+        viewModelScope.launch {
+            val pinEnabled = settingsRepo.isPinEnabled()
+            val theme = settingsRepo.getSetting("theme_mode", "system")
+            _uiState.update {
+                it.copy(
+                    isPinEnabled = pinEnabled,
+                    isAppLocked = pinEnabled, // Lock initially if PIN is set
+                    themeMode = theme
+                )
+            }
+
+            // Load initial data from repositories
+            val now = LocalDate.now()
+            val balance = financeRepo.getCurrentBalance()
+            val opening = financeRepo.getOpeningBalance()
+            val summary = financeRepo.getMonthlySummary(now.year, now.monthValue)
+            val transactions = financeRepo.getTransactions()
+            val categories = financeRepo.getCategories()
+            val budgets = financeRepo.getBudgets(now.year, now.monthValue)
+            val savings = financeRepo.getSavingsGoals()
+            val tasks = plannerRepo.getTasks()
+            val events = plannerRepo.getCalendarEvents()
+            val queue = plannerRepo.getSyncQueue()
+            val syncCount = queue.size
+            val todayStr = now.toString()
+            val dailyNote = plannerRepo.getDailyNote(todayStr)
+            val actNotes = plannerRepo.getActivityNotes(todayStr)
+
+            _uiState.update {
+                it.copy(
+                    currentBalance = balance,
+                    openingBalance = opening,
+                    monthlyIncome = summary.first,
+                    monthlyExpense = summary.second,
+                    monthlyNet = summary.third,
+                    transactions = transactions,
+                    categories = categories,
+                    budgets = budgets,
+                    savingsGoals = savings,
+                    tasks = tasks,
+                    calendarEvents = events,
+                    syncQueueCount = syncCount,
+                    dailyNote = dailyNote,
+                    activityNotes = actNotes,
+                    isInitializing = false
+                )
+            }
+        }
     }
 
     private fun loadSettingsAndSecurity() {
@@ -68,7 +115,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.update {
                 it.copy(
                     isPinEnabled = pinEnabled,
-                    isAppLocked = pinEnabled, // Lock initially if PIN is set
+                    isAppLocked = pinEnabled,
                     themeMode = theme
                 )
             }
