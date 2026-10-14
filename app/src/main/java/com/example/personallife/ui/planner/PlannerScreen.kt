@@ -46,7 +46,10 @@ fun PlannerScreen(
     onSaveDailyNote: (date: String, content: String) -> Unit,
     onSaveActivityNote: (ActivityNoteItem) -> Unit,
     onDeleteActivityNote: (id: Long, date: String) -> Unit,
-    onPerformManualSync: () -> Unit
+    onPerformManualSync: () -> Unit,
+    onConnectGoogle: () -> Unit,
+    onVerifyToken: (String) -> Unit,
+    onDisconnectGoogle: () -> Unit
 ) {
     val subTabs = listOf("Kalender", "Tugas", "Catatan", "Sync Kalender")
 
@@ -120,6 +123,10 @@ fun PlannerScreen(
                     events = state.calendarEvents,
                     syncQueueCount = state.syncQueueCount,
                     lastSyncMessage = state.lastSyncMessage,
+                    calendarConnectionState = state.calendarConnectionState,
+                    onConnectGoogle = onConnectGoogle,
+                    onVerifyToken = onVerifyToken,
+                    onDisconnectGoogle = onDisconnectGoogle,
                     onPerformManualSync = onPerformManualSync
                 )
             }

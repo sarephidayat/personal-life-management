@@ -41,6 +41,7 @@ data class MainUiState(
     val isPinEnabled: Boolean = false,
     val isAppLocked: Boolean = false,
     val themeMode: String = "system",
+    val calendarConnectionState: com.example.personallife.data.google.CalendarConnectionState = com.example.personallife.data.google.CalendarConnectionState.NotConnected,
     val currentNavTab: Int = 0, // 0: Home, 1: Finance, 2: Planner
     val financeSubTab: Int = 0, // 0: Transaksi, 1: Anggaran, 2: Tabungan, 3: Laporan, 4: Kategori
     val plannerSubTab: Int = 0  // 0: Kalender, 1: Tugas, 2: Catatan, 3: Sync
@@ -50,6 +51,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val financeRepo = FinanceRepository(application)
     private val plannerRepo = PlannerRepository(application)
     private val settingsRepo = SettingsRepository(application)
+    val googleCalendarService = com.example.personallife.data.google.GoogleCalendarService(application)
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -357,6 +359,53 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             plannerRepo.deleteActivityNote(id)
             loadActivityNotes(date)
         }
+    }
+
+    fun getGoogleOAuthUrl(): String = googleCalendarService.buildOAuthAuthorizationUrl()
+
+    fun handleOAuthRedirectUri(uri: android.net.Uri) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(calendarConnectionState = com.example.personallife.data.google.CalendarConnectionState.Connecting) }
+            val (tokenOrCode, error) = googleCalendarService.parseRedirectUri(uri)
+            if (!error.isNullOrEmpty()) {
+                _uiState.update {
+                    it.copy(
+                        calendarConnectionState = com.example.personallife.data.google.CalendarConnectionState.Error(
+                            message = "Autentikasi ditolak atau dibatalkan",
+                            details = "Kode respon: $error"
+                        )
+                    )
+                }
+                return@launch
+            }
+            if (tokenOrCode.isNullOrEmpty()) {
+                _uiState.update {
+                    it.copy(
+                        calendarConnectionState = com.example.personallife.data.google.CalendarConnectionState.Error(
+                            message = "Token autentikasi tidak ditemukan",
+                            details = "URL redirect tidak memuat parameter access_token."
+                        )
+                    )
+                }
+                return@launch
+            }
+
+            val verificationResult = googleCalendarService.verifyPrimaryCalendarAccess(tokenOrCode)
+            _uiState.update { it.copy(calendarConnectionState = verificationResult) }
+        }
+    }
+
+    fun verifyCalendarAccessWithToken(token: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(calendarConnectionState = com.example.personallife.data.google.CalendarConnectionState.Connecting) }
+            val verificationResult = googleCalendarService.verifyPrimaryCalendarAccess(token.trim())
+            _uiState.update { it.copy(calendarConnectionState = verificationResult) }
+        }
+    }
+
+    fun disconnectGoogleCalendar() {
+        googleCalendarService.clearToken()
+        _uiState.update { it.copy(calendarConnectionState = com.example.personallife.data.google.CalendarConnectionState.NotConnected) }
     }
 
     fun performManualSync() {

@@ -1,5 +1,7 @@
 package com.example.personallife
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,6 +54,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        handleAuthIntent(intent)
 
         setContent {
             val state by viewModel.uiState.collectAsState()
@@ -68,10 +72,26 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleAuthIntent(intent)
+    }
+
+    private fun handleAuthIntent(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (uri.scheme == "com.aistudio.personallife" && uri.host == "oauth2redirect") {
+            viewModel.handleOAuthRedirectUri(uri)
+            viewModel.setNavTab(2)
+            viewModel.setPlannerSubTab(3)
+        }
+    }
 }
 
 @Composable
 fun MainAppContent(viewModel: MainViewModel) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showQuickTransactionDialog by remember { mutableStateOf(false) }
@@ -191,7 +211,18 @@ fun MainAppContent(viewModel: MainViewModel) {
                     onSaveDailyNote = { date, content -> viewModel.saveDailyNote(date, content) },
                     onSaveActivityNote = { viewModel.saveActivityNote(it) },
                     onDeleteActivityNote = { id, date -> viewModel.deleteActivityNote(id, date) },
-                    onPerformManualSync = { viewModel.performManualSync() }
+                    onPerformManualSync = { viewModel.performManualSync() },
+                    onConnectGoogle = {
+                        val authUrl = viewModel.getGoogleOAuthUrl()
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(authUrl))
+                        context.startActivity(intent)
+                    },
+                    onVerifyToken = { token ->
+                        viewModel.verifyCalendarAccessWithToken(token)
+                    },
+                    onDisconnectGoogle = {
+                        viewModel.disconnectGoogleCalendar()
+                    }
                 )
             }
         }
