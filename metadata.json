@@ -1,0 +1,6 @@
+{
+  "name": "Personal Life",
+  "description": "Aplikasi manajemen kehidupan pribadi offline-first: pencatatan keuangan, anggaran, target tabungan, agenda kalender, dan tugas harian.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
