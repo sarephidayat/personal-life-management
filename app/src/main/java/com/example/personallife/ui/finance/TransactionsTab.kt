@@ -309,15 +309,16 @@ fun TransactionsTab(
 fun TransactionFormDialog(
     transaction: TransactionItem?,
     categories: List<CategoryItem>,
+    initialType: String = "expense",
     onDismiss: () -> Unit,
     onSave: (TransactionItem) -> Unit
 ) {
-    var type by remember { mutableStateOf(transaction?.type ?: "expense") }
+    var type by remember { mutableStateOf(transaction?.type ?: initialType) }
     var amountText by remember { mutableStateOf(transaction?.amount?.toString() ?: "") }
     var note by remember { mutableStateOf(transaction?.note ?: "") }
     var date by remember { mutableStateOf(transaction?.transactionDate ?: LocalDate.now().toString()) }
     var selectedCategoryId by remember {
-        val initialCatId = transaction?.categoryId ?: categories.firstOrNull { it.type == type }?.id ?: 1L
+        val initialCatId = transaction?.categoryId ?: categories.firstOrNull { it.type == (transaction?.type ?: initialType) }?.id ?: 1L
         mutableStateOf(initialCatId)
     }
     var errorMessage by remember { mutableStateOf("") }

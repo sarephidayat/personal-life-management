@@ -221,6 +221,87 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             }
             db.insert("categories", null, cv)
         }
+
+        seedSampleDataIfEmpty(db, now)
+    }
+
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        val now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        seedSampleDataIfEmpty(db, now)
+    }
+
+    private fun seedSampleDataIfEmpty(db: SQLiteDatabase, now: String) {
+        val countCursor = db.rawQuery("SELECT COUNT(*) FROM transactions", null)
+        var count = 0
+        if (countCursor.moveToFirst()) {
+            count = countCursor.getInt(0)
+        }
+        countCursor.close()
+
+        if (count == 0) {
+            val today = java.time.LocalDate.now().toString()
+            val yesterday = java.time.LocalDate.now().minusDays(1).toString()
+            val twoDaysAgo = java.time.LocalDate.now().minusDays(2).toString()
+
+            // Find categories
+            val catCursor = db.rawQuery("SELECT id, name, type FROM categories", null)
+            val catMap = mutableMapOf<String, Long>()
+            while (catCursor.moveToNext()) {
+                catMap[catCursor.getString(1)] = catCursor.getLong(0)
+            }
+            catCursor.close()
+
+            val gajiId = catMap["Gaji"] ?: 1L
+            val belanjaId = catMap["Belanja & Kebutuhan"] ?: 7L
+            val makanId = catMap["Makanan & Minuman"] ?: 5L
+            val transportId = catMap["Transportasi"] ?: 6L
+            val tagihanId = catMap["Tagihan & Utilitas"] ?: 8L
+
+            // Sample Transactions
+            val sampleTx = listOf(
+                arrayOf("income", gajiId.toString(), "8500000", twoDaysAgo, "Gaji Bulanan Pekerjaan"),
+                arrayOf("expense", belanjaId.toString(), "750000", yesterday, "Belanja Kebutuhan Dapur"),
+                arrayOf("expense", makanId.toString(), "45000", today, "Makan Siang & Kopi"),
+                arrayOf("expense", transportId.toString(), "120000", yesterday, "Isi Bensin Kendaraan"),
+                arrayOf("expense", tagihanId.toString(), "480000", twoDaysAgo, "Tagihan Listrik & WiFi")
+            )
+
+            for (tx in sampleTx) {
+                val cv = ContentValues().apply {
+                    put("type", tx[0])
+                    put("category_id", tx[1].toLong())
+                    put("amount", tx[2].toLong())
+                    put("transaction_date", tx[3])
+                    put("note", tx[4])
+                    put("created_at", now)
+                    put("updated_at", now)
+                }
+                db.insert("transactions", null, cv)
+            }
+
+            // Sample Tasks
+            val sampleTasks = listOf(
+                arrayOf("Review draft laporan anggaran Q4", "high", "in_progress", today),
+                arrayOf("Bayar tagihan listrik bulanan", "medium", "todo", java.time.LocalDate.now().plusDays(1).toString()),
+                arrayOf("Siapkan presentasi evaluasi mingguan", "high", "todo", java.time.LocalDate.now().plusDays(2).toString()),
+                arrayOf("Beli perlengkapan kerja & buku", "low", "done", yesterday),
+                arrayOf("Cek target tabungan dana darurat", "medium", "done", twoDaysAgo)
+            )
+
+            for (t in sampleTasks) {
+                val cv = ContentValues().apply {
+                    put("title", t[0])
+                    put("priority", t[1])
+                    put("status", t[2])
+                    put("deadline", t[3])
+                    put("completed_at", if (t[2] == "done") now else null)
+                    put("created_at", now)
+                    put("updated_at", now)
+                }
+                db.insert("tasks", null, cv)
+            }
+        }
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {

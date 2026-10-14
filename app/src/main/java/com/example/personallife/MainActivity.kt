@@ -149,10 +149,11 @@ fun MainAppContent(viewModel: MainViewModel) {
                         viewModel.setPlannerSubTab(subTab)
                         viewModel.setNavTab(2)
                     },
-                    onQuickAddTransaction = { showQuickTransactionDialog = true },
-                    onQuickAddTask = {
-                        viewModel.setPlannerSubTab(1) // Tab Tugas
-                        viewModel.setNavTab(2)
+                    onAddTransaction = { tx ->
+                        viewModel.addTransaction(tx)
+                    },
+                    onToggleTaskStatus = { id, newStatus ->
+                        viewModel.toggleTaskStatus(id, newStatus)
                     },
                     onOpenSettings = { showSettingsDialog = true }
                 )
