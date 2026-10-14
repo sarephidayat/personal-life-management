@@ -55,6 +55,7 @@ import com.example.personallife.ui.components.NeoButton
 import com.example.personallife.ui.components.NeoCard
 import com.example.personallife.ui.components.NeoChip
 import com.example.personallife.ui.components.NeoConfirmDialog
+import com.example.personallife.ui.components.NeoDatePickerField
 import com.example.personallife.ui.components.NeoTextField
 import com.example.personallife.ui.theme.LightText
 import com.example.personallife.ui.theme.NeoGreen
@@ -389,11 +390,12 @@ fun TasksTab(
                         NeoChip(text = "Done", selected = status == "done", onClick = { status = "done" }, selectedColor = NeoGreen, modifier = Modifier.weight(1f))
                     }
 
-                    NeoTextField(
+                    NeoDatePickerField(
                         value = deadline,
-                        onValueChange = { deadline = it },
-                        label = "Deadline (Opsional, YYYY-MM-DD)",
-                        placeholder = "2026-10-20",
+                        onDateSelected = { deadline = it },
+                        label = "Deadline (Opsional)",
+                        optional = true,
+                        onClear = { deadline = "" },
                         testTag = "task_deadline_input"
                     )
 
@@ -470,11 +472,10 @@ fun TasksTab(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    NeoTextField(
+                    NeoDatePickerField(
                         value = dateText,
-                        onValueChange = { dateText = it },
-                        label = "Tanggal (YYYY-MM-DD)",
-                        placeholder = "2026-10-14",
+                        onDateSelected = { dateText = it },
+                        label = "Tanggal Jadwal",
                         testTag = "schedule_date_input"
                     )
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

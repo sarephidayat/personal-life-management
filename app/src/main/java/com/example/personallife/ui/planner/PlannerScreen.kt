@@ -117,7 +117,8 @@ fun PlannerScreen(
                     activityNotes = state.activityNotes,
                     onSaveDailyNote = onSaveDailyNote,
                     onSaveActivityNote = onSaveActivityNote,
-                    onDeleteActivityNote = onDeleteActivityNote
+                    onDeleteActivityNote = onDeleteActivityNote,
+                    onSelectDate = onSelectDate
                 )
                 3 -> CalendarSyncTab(
                     events = state.calendarEvents,

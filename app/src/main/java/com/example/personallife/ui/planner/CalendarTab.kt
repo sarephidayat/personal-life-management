@@ -51,6 +51,8 @@ import com.example.personallife.ui.components.NeoBadge
 import com.example.personallife.ui.components.NeoButton
 import com.example.personallife.ui.components.NeoCard
 import com.example.personallife.ui.components.NeoConfirmDialog
+import com.example.personallife.ui.components.NeoDatePickerDialog
+import com.example.personallife.ui.components.NeoDatePickerField
 import com.example.personallife.ui.components.NeoTextField
 import com.example.personallife.ui.theme.LightText
 import com.example.personallife.ui.theme.NeoBlue
@@ -72,6 +74,7 @@ fun CalendarTab(
 ) {
     var currentYearMonth by remember { mutableStateOf(YearMonth.of(selectedDate.year, selectedDate.monthValue)) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var showHeaderDatePicker by remember { mutableStateOf(false) }
     var eventToDelete by remember { mutableStateOf<CalendarEventItem?>(null) }
 
     val daysInMonth = currentYearMonth.lengthOfMonth()
@@ -116,7 +119,11 @@ fun CalendarTab(
                                 text = monthTitle,
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { showHeaderDatePicker = true }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                             IconButton(onClick = { currentYearMonth = currentYearMonth.plusMonths(1) }) {
                                 Icon(
@@ -335,6 +342,7 @@ fun CalendarTab(
 
     // Add Event Dialog
     if (showAddDialog) {
+        var eventDate by remember { mutableStateOf(selectedDate.toString()) }
         var title by remember { mutableStateOf("") }
         var description by remember { mutableStateOf("") }
         var location by remember { mutableStateOf("") }
@@ -357,6 +365,13 @@ fun CalendarTab(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    NeoDatePickerField(
+                        value = eventDate,
+                        onDateSelected = { eventDate = it },
+                        label = "Tanggal Agenda",
+                        testTag = "event_date_input"
+                    )
+
                     NeoTextField(
                         value = title,
                         onValueChange = { title = it },
@@ -416,8 +431,8 @@ fun CalendarTab(
                             errorMsg = "Waktu selesai harus lebih besar dari waktu mulai!"
                             return@NeoButton
                         }
-                        val startIso = "${selectedDate}T$startTime:00"
-                        val endIso = "${selectedDate}T$endTime:00"
+                        val startIso = "${eventDate}T$startTime:00"
+                        val endIso = "${eventDate}T$endTime:00"
 
                         onAddEvent(
                             CalendarEventItem(
@@ -441,6 +456,18 @@ fun CalendarTab(
                     Text("Batal", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
+        )
+    }
+
+    // Header Quick Date Picker
+    if (showHeaderDatePicker) {
+        NeoDatePickerDialog(
+            initialDate = selectedDate,
+            onDateSelected = { date ->
+                onSelectDate(date)
+                currentYearMonth = YearMonth.of(date.year, date.monthValue)
+            },
+            onDismiss = { showHeaderDatePicker = false }
         )
     }
 

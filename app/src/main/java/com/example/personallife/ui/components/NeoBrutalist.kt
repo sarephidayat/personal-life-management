@@ -3,6 +3,7 @@ package com.example.personallife.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -16,15 +17,32 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -386,6 +404,223 @@ fun NeoConfirmDialog(
                     Text(cancelText, fontWeight = FontWeight.Bold)
                 }
             }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NeoDatePickerDialog(
+    initialDate: LocalDate? = null,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val initialMillis = remember(initialDate) {
+        (initialDate ?: LocalDate.now())
+            .atStartOfDay(ZoneOffset.UTC)
+            .toInstant()
+            .toEpochMilli()
+    }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialMillis
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            NeoButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val selectedLocalDate = Instant.ofEpochMilli(millis)
+                            .atZone(ZoneOffset.UTC)
+                            .toLocalDate()
+                        onDateSelected(selectedLocalDate)
+                    }
+                    onDismiss()
+                },
+                text = "Pilih",
+                backgroundColor = NeoYellow,
+                cornerRadius = 8.dp,
+                testTag = "date_picker_confirm_button"
+            )
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+            ) {
+                Text("Batal", fontWeight = FontWeight.Bold)
+            }
+        },
+        colors = DatePickerDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier
+            .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
+            .padding(4.dp)
+    ) {
+        DatePicker(
+            state = datePickerState,
+            title = {
+                Text(
+                    text = "Pilih Tanggal",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 24.dp, top = 16.dp)
+                )
+            },
+            headline = {
+                val selectedMillis = datePickerState.selectedDateMillis
+                val formattedHeadline = if (selectedMillis != null) {
+                    val date = Instant.ofEpochMilli(selectedMillis).atZone(ZoneOffset.UTC).toLocalDate()
+                    date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", java.util.Locale.forLanguageTag("id-ID")))
+                } else {
+                    "Pilih Tanggal"
+                }
+                Text(
+                    text = formattedHeadline,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 24.dp, bottom = 12.dp)
+                )
+            },
+            colors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                weekdayContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                subheadContentColor = MaterialTheme.colorScheme.onSurface,
+                yearContentColor = MaterialTheme.colorScheme.onSurface,
+                currentYearContentColor = NeoYellow,
+                selectedYearContentColor = LightText,
+                selectedYearContainerColor = NeoYellow,
+                dayContentColor = MaterialTheme.colorScheme.onSurface,
+                disabledDayContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                selectedDayContentColor = LightText,
+                disabledSelectedDayContentColor = LightText.copy(alpha = 0.38f),
+                selectedDayContainerColor = NeoYellow,
+                disabledSelectedDayContainerColor = NeoYellow.copy(alpha = 0.38f),
+                todayDateBorderColor = NeoYellow,
+                todayContentColor = MaterialTheme.colorScheme.onSurface
+            )
+        )
+    }
+}
+
+@Composable
+fun NeoDatePickerField(
+    value: String, // stored in YYYY-MM-DD format
+    onDateSelected: (String) -> Unit, // returns YYYY-MM-DD
+    label: String,
+    modifier: Modifier = Modifier,
+    placeholder: String = "Pilih Tanggal (DD/MM/YYYY)",
+    isError: Boolean = false,
+    errorMessage: String? = null,
+    testTag: String? = null,
+    optional: Boolean = false,
+    onClear: (() -> Unit)? = null
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    // Parse the current date for display in DD/MM/YYYY
+    val parsedDate = remember(value) {
+        try {
+            if (value.isNotBlank()) {
+                val datePart = if (value.contains("T")) value.substringBefore("T") else value.take(10)
+                LocalDate.parse(datePart)
+            } else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    val displayString = parsedDate?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: ""
+
+    val fieldModifier = if (testTag != null) modifier.testTag(testTag) else modifier
+
+    Column(modifier = fieldModifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .border(
+                    width = 2.dp,
+                    color = if (isError) NeoRed else MaterialTheme.colorScheme.outline,
+                    shape = RoundedCornerShape(10.dp)
+                )
+                .clickable { showDialog = true }
+                .padding(horizontal = 14.dp, vertical = 14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Pilih Tanggal",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = if (displayString.isNotEmpty()) displayString else placeholder,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = if (displayString.isNotEmpty()) FontWeight.Bold else FontWeight.Normal,
+                        color = if (displayString.isNotEmpty()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (optional && displayString.isNotEmpty() && onClear != null) {
+                    IconButton(
+                        onClick = onClear,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Hapus Tanggal",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        if (isError && !errorMessage.isNullOrEmpty()) {
+            Text(
+                text = errorMessage,
+                style = MaterialTheme.typography.bodySmall,
+                color = NeoRed,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+            )
+        }
+    }
+
+    if (showDialog) {
+        NeoDatePickerDialog(
+            initialDate = parsedDate ?: LocalDate.now(),
+            onDateSelected = { selectedLocalDate ->
+                onDateSelected(selectedLocalDate.toString())
+            },
+            onDismiss = { showDialog = false }
         )
     }
 }

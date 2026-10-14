@@ -49,6 +49,7 @@ import com.example.personallife.ui.components.NeoBadge
 import com.example.personallife.ui.components.NeoButton
 import com.example.personallife.ui.components.NeoCard
 import com.example.personallife.ui.components.NeoConfirmDialog
+import com.example.personallife.ui.components.NeoDatePickerField
 import com.example.personallife.ui.components.NeoTextField
 import com.example.personallife.ui.theme.LightText
 import com.example.personallife.ui.theme.NeoGreen
@@ -291,11 +292,12 @@ fun SavingsTab(
                         testTag = "savings_initial_input"
                     )
 
-                    NeoTextField(
+                    NeoDatePickerField(
                         value = targetDate,
-                        onValueChange = { targetDate = it },
+                        onDateSelected = { targetDate = it },
                         label = "Target Tanggal (Opsional)",
-                        placeholder = "YYYY-MM-DD",
+                        optional = true,
+                        onClear = { targetDate = "" },
                         testTag = "savings_date_input"
                     )
 

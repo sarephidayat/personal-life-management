@@ -53,6 +53,7 @@ import com.example.personallife.ui.components.NeoButton
 import com.example.personallife.ui.components.NeoCard
 import com.example.personallife.ui.components.NeoChip
 import com.example.personallife.ui.components.NeoConfirmDialog
+import com.example.personallife.ui.components.NeoDatePickerField
 import com.example.personallife.ui.components.NeoTextField
 import com.example.personallife.ui.theme.LightText
 import com.example.personallife.ui.theme.NeoGreen
@@ -422,11 +423,10 @@ fun TransactionFormDialog(
                 }
 
                 // Tanggal
-                NeoTextField(
+                NeoDatePickerField(
                     value = date,
-                    onValueChange = { date = it },
-                    label = "Tanggal (YYYY-MM-DD)",
-                    placeholder = "2026-10-14",
+                    onDateSelected = { date = it },
+                    label = "Tanggal Transaksi",
                     testTag = "transaction_date_input"
                 )
 

@@ -51,6 +51,7 @@ import com.example.personallife.ui.components.NeoBadge
 import com.example.personallife.ui.components.NeoButton
 import com.example.personallife.ui.components.NeoCard
 import com.example.personallife.ui.components.NeoConfirmDialog
+import com.example.personallife.ui.components.NeoDatePickerField
 import com.example.personallife.ui.components.NeoTextField
 import com.example.personallife.ui.theme.LightText
 import com.example.personallife.ui.theme.NeoGreen
@@ -258,6 +259,7 @@ fun BudgetsTab(
     // Set Budget Dialog
     if (showAddDialog) {
         var selectedCatId by remember { mutableStateOf(expenseCategories.firstOrNull()?.id ?: 1L) }
+        var budgetDate by remember { mutableStateOf(LocalDate.of(currentYear, currentMonth, 1).toString()) }
         var limitText by remember { mutableStateOf("") }
         var errorMsg by remember { mutableStateOf("") }
 
@@ -285,7 +287,7 @@ fun BudgetsTab(
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp)
+                            .height(110.dp)
                             .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                             .padding(6.dp)
                     ) {
@@ -305,6 +307,13 @@ fun BudgetsTab(
                             )
                         }
                     }
+
+                    NeoDatePickerField(
+                        value = budgetDate,
+                        onDateSelected = { budgetDate = it },
+                        label = "Bulan & Tahun Anggaran",
+                        testTag = "budget_date_input"
+                    )
 
                     NeoTextField(
                         value = limitText,
@@ -328,7 +337,8 @@ fun BudgetsTab(
                             errorMsg = "Batas anggaran harus lebih besar dari 0!"
                             return@NeoButton
                         }
-                        onSetBudget(selectedCatId, currentYear, currentMonth, limit)
+                        val parsed = try { LocalDate.parse(budgetDate) } catch (_: Exception) { LocalDate.now() }
+                        onSetBudget(selectedCatId, parsed.year, parsed.monthValue, limit)
                         showAddDialog = false
                     },
                     text = "Simpan",

@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
 import com.example.personallife.data.models.ActivityNoteItem
 import com.example.personallife.data.models.DailyNoteItem
 import com.example.personallife.data.models.FormatUtils
@@ -41,6 +42,8 @@ import com.example.personallife.ui.components.NeoBadge
 import com.example.personallife.ui.components.NeoButton
 import com.example.personallife.ui.components.NeoCard
 import com.example.personallife.ui.components.NeoConfirmDialog
+import com.example.personallife.ui.components.NeoDatePickerDialog
+import com.example.personallife.ui.components.NeoDatePickerField
 import com.example.personallife.ui.components.NeoTextField
 import com.example.personallife.ui.theme.LightText
 import com.example.personallife.ui.theme.NeoGreen
@@ -56,10 +59,12 @@ fun NotesTab(
     onSaveDailyNote: (date: String, content: String) -> Unit,
     onSaveActivityNote: (ActivityNoteItem) -> Unit,
     onDeleteActivityNote: (id: Long, date: String) -> Unit,
+    onSelectDate: (LocalDate) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var dailyText by remember { mutableStateOf(dailyNote?.content ?: "") }
     var showAddActivityDialog by remember { mutableStateOf(false) }
+    var showDatePickerDialog by remember { mutableStateOf(false) }
     var noteToDelete by remember { mutableStateOf<ActivityNoteItem?>(null) }
 
     LaunchedEffect(dailyNote) {
@@ -95,11 +100,13 @@ fun NotesTab(
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            NeoBadge(
-                                text = FormatUtils.formatDateDisplay(selectedDate.toString()),
-                                color = NeoYellow,
-                                textColor = LightText
-                            )
+                            Box(modifier = Modifier.clickable { showDatePickerDialog = true }) {
+                                NeoBadge(
+                                    text = FormatUtils.formatDateDisplay(selectedDate.toString()),
+                                    color = NeoYellow,
+                                    textColor = LightText
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))
@@ -230,6 +237,7 @@ fun NotesTab(
 
     // Add Activity Note Dialog
     if (showAddActivityDialog) {
+        var noteDate by remember { mutableStateOf(selectedDate.toString()) }
         var noteTitle by remember { mutableStateOf("") }
         var noteContent by remember { mutableStateOf("") }
         var errorMsg by remember { mutableStateOf("") }
@@ -241,6 +249,12 @@ fun NotesTab(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NeoDatePickerField(
+                        value = noteDate,
+                        onDateSelected = { noteDate = it },
+                        label = "Tanggal Catatan",
+                        testTag = "activity_note_date_input"
+                    )
                     NeoTextField(
                         value = noteTitle,
                         onValueChange = { noteTitle = it },
@@ -273,7 +287,7 @@ fun NotesTab(
                             ActivityNoteItem(
                                 title = noteTitle.ifBlank { null },
                                 content = noteContent,
-                                activityDate = selectedDate.toString()
+                                activityDate = noteDate
                             )
                         )
                         showAddActivityDialog = false
@@ -288,6 +302,17 @@ fun NotesTab(
                     Text("Batal", fontWeight = FontWeight.Bold)
                 }
             }
+        )
+    }
+
+    // Daily Note Date Picker
+    if (showDatePickerDialog) {
+        NeoDatePickerDialog(
+            initialDate = selectedDate,
+            onDateSelected = { date ->
+                onSelectDate(date)
+            },
+            onDismiss = { showDatePickerDialog = false }
         )
     }
 
